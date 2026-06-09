@@ -11,12 +11,12 @@ SokobanState = tuple[Position, frozenset[Position]]
 @dataclass(frozen=True)
 class Sokoban:
     grid: tuple[str, ...] = (
-        "#######",
-        "#..G..#",
-        "#..B..#",
-        "#..P..#",
-        "#.....#",
-        "#######",
+        "######",
+        "#.P..#",
+        "#..B.#",
+        "#.B.G#",
+        "#.G..#",
+        "######",
     )
 
     def __post_init__(self) -> None:
@@ -34,6 +34,14 @@ class Sokoban:
                     boxes.add((r, c))
                 elif value == "P":
                     player = (r, c)
+        if len(boxes) != 2:
+            raise ValueError(f"Sokoban requires exactly 2 boxes, found {len(boxes)}")
+        if len(goals) != 2:
+            raise ValueError(f"Sokoban requires exactly 2 goals, found {len(goals)}")
+        if len(goals) != len(set(goals)):
+            raise ValueError("Sokoban goals must be at distinct positions")
+        if boxes == goals:
+            raise ValueError("Sokoban boxes must not start on goal positions")
         object.__setattr__(self, "walls", frozenset(walls))
         object.__setattr__(self, "goals", frozenset(goals))
         object.__setattr__(self, "start", (player, frozenset(boxes)))

@@ -20,22 +20,20 @@ importlib.reload(renderers)
 st.set_page_config(page_title="Visualizador de búsqueda IA", layout="wide")
 
 PROBLEMS = {
-    "Búsqueda no informada — Frozen Lake determinista": ["BFS", "DFS", "UCS"],
+    "Búsqueda no informada — Frozen Lake determinista": ["BFS", "DFS"],
     "Búsqueda informada — Sokoban": ["A*", "Greedy Best-First Search"],
     "Búsqueda local — 8 reinas": ["Hill Climbing", "Simulated Annealing"],
-    "Búsqueda adversaria — Gato / Tic-Tac-Toe": ["Minimax", "Alpha-Beta Pruning"],
+    "Búsqueda adversaria — Gato / Tic-Tac-Toe": ["Alpha-Beta Pruning"],
 }
 
 EXPLANATIONS = {
     "BFS": "BFS usa una cola FIFO. Expande por niveles y encuentra el camino con menor número de pasos si todos los costos son iguales.",
     "DFS": "DFS usa una pila LIFO. Profundiza primero; puede encontrar solución rápido, pero no garantiza optimalidad.",
-    "UCS": "UCS usa una cola de prioridad ordenada por costo acumulado g(n). Es óptimo con costos positivos.",
     "A*": "A* combina costo acumulado y heurística: f(n)=g(n)+h(n).",
     "Greedy Best-First Search": "Greedy prioriza solo h(n). Suele ser rápido, pero puede no ser óptimo.",
     "Hill Climbing": "Hill Climbing mejora una solución completa eligiendo vecinos con menos conflictos.",
     "Simulated Annealing": "Simulated Annealing acepta a veces movimientos peores para escapar de óptimos locales.",
-    "Minimax": "Minimax asume que el oponente juega óptimamente y alterna MAX/MIN.",
-    "Alpha-Beta Pruning": "Alpha-Beta produce la misma decisión que Minimax, pero poda ramas que no pueden cambiar el resultado.",
+    "Alpha-Beta Pruning": "Alpha-Beta evalúa recursivamente estados de juego con poda para descartar ramas que no pueden cambiar el resultado.",
 }
 
 
@@ -119,7 +117,22 @@ def show_step_controls(steps, context_key: str):
     st.subheader(step.title)
     st.write(step.description)
     if step.metadata:
-        st.json(step.metadata)
+        md = step.metadata
+        # BFS/DFS metadata has nodo_actual; show structured display instead of raw JSON.
+        if "nodo_actual" in md:
+            col_a, col_b = st.columns(2)
+            with col_a:
+                visitados = md.get("visitados", [])
+                st.metric("Visitados", len(visitados) if isinstance(visitados, list) else visitados)
+                frontera = md.get("frontera", [])
+                st.metric("Frontera", len(frontera) if isinstance(frontera, list) else frontera)
+            with col_b:
+                st.metric("Nodo actual", md.get("nodo_actual", "-"))
+                st.metric("Longitud camino", md.get("longitud_camino", 0))
+            if md.get("comentario"):
+                st.info(md["comentario"])
+        else:
+            st.json(step.metadata)
     return step
 
 
@@ -155,12 +168,15 @@ def format_queen_board(board) -> str:
 
 def run_frozen_lake(algorithm: str):
     problem = FrozenLake()
+    to_id = lambda pos: renderers.position_id(pos, problem.width)
     if algorithm == "BFS":
-        steps = uninformed.breadth_first_search(problem.start, problem.is_goal, problem.successors)
-    elif algorithm == "DFS":
-        steps = uninformed.depth_first_search(problem.start, problem.is_goal, problem.successors)
+        steps = uninformed.breadth_first_search(
+            problem.start, problem.is_goal, problem.successors, state_to_id=to_id,
+        )
     else:
-        steps = uninformed.uniform_cost_search(problem.start, problem.is_goal, problem.successors)
+        steps = uninformed.depth_first_search(
+            problem.start, problem.is_goal, problem.successors, state_to_id=to_id,
+        )
 
     left, right = st.columns([1, 1])
     with left:
@@ -169,6 +185,27 @@ def run_frozen_lake(algorithm: str):
         if step is not None:
             st.markdown(renderers.render_frozen_lake(problem, step.state, step.visited, step.frontier, step.path), unsafe_allow_html=True)
             st.caption("Colores: actual=naranja, visitado=amarillo, frontera=azul, camino parcial=verde.")
+            st.caption("Criterio de selección: En caso de múltiples opciones, los nodos vecinos se evalúan y seleccionan en sentido antihorario.")
+
+            # Structured metadata panel with numeric cell ids.
+            if step.metadata:
+                md = step.metadata
+                col_a, col_b = st.columns(2)
+                with col_a:
+                    st.metric("Visitados", len(md.get("visitados", [])) if isinstance(md.get("visitados"), list) else md.get("visitados", 0))
+                    st.metric("Frontera", len(md.get("frontera", [])) if isinstance(md.get("frontera"), list) else md.get("frontera", 0))
+                with col_b:
+                    st.metric("Nodo actual", md.get("nodo_actual", "-"))
+                    st.metric("Longitud camino", md.get("longitud_camino", 0))
+                if isinstance(md.get("visitados"), list):
+                    with st.expander("IDs de celdas visitadas"):
+                        st.code(md["visitados"])
+                if isinstance(md.get("frontera"), list):
+                    with st.expander("IDs de celdas en frontera"):
+                        st.code(md["frontera"])
+                if md.get("comentario"):
+                    st.info(md["comentario"])
+
             show_path_summary(step.path, format_grid_position)
 
 
@@ -214,38 +251,53 @@ def run_queens(algorithm: str):
             show_path_summary(step.path, format_queen_board, "Historial de configuraciones")
 
 
-def board_from_preset(name: str):
-    presets = {
-        "Tablero vacío": (" ", " ", " ", " ", " ", " ", " ", " ", " "),
-        "Partida media 1": ("X", "O", " ", " ", "X", " ", "O", " ", " "),
-        "Partida media 2": ("O", " ", "X", " ", "X", " ", " ", "O", " "),
-    }
-    return presets[name]
-
-
 def run_tictactoe(algorithm: str):
-    preset = st.sidebar.selectbox("Estado inicial", ["Tablero vacío", "Partida media 1", "Partida media 2"])
-    board = board_from_preset(preset)
-    move, evaluations, next_board = adversarial.choose_move(board, ai_player="X", algorithm=algorithm)
+    # Interactive human-vs-machine Tic-Tac-Toe using Alpha-Beta pruning only.
+    # Human plays O, AI plays X. Board is stored in session state.
+    if "ttt_board" not in st.session_state:
+        st.session_state.ttt_board = (" ", " ", " ", " ", " ", " ", " ", " ", " ")
 
-    left, right = st.columns([1, 1])
-    with left:
-        st.subheader("Estado actual")
-        st.markdown(renderers.render_tictactoe(board), unsafe_allow_html=True)
-        if adversarial.winner(board):
-            st.success(f"Ganador actual: {adversarial.winner(board)}")
-        elif move is None:
-            st.info("No hay movimientos disponibles.")
-        else:
-            st.write(f"Movimiento elegido por X: posición {move + 1}")
-            st.markdown(renderers.render_tictactoe(next_board), unsafe_allow_html=True)
+    board = st.session_state.ttt_board
+    win = adversarial.winner(board)
+    full = adversarial.is_full(board)
+    game_over = win is not None or full
 
-    with right:
-        st.subheader("Evaluación de movimientos")
-        st.write("Valor 1 = gana X, 0 = empate, -1 = pierde X si ambos juegan correctamente.")
-        rows = [{"Movimiento": item.move + 1, "Valor": item.value, "Nodos evaluados": item.nodes} for item in evaluations]
-        st.table(rows)
-        st.caption("Alpha-Beta evalúa menos nodos que Minimax en muchos estados, manteniendo la misma decisión.")
+    st.session_state.ttt_game_over = game_over
+
+    # Render the board as a 3x3 grid of buttons.
+    cols = st.columns(3)
+    for r in range(3):
+        for c in range(3):
+            idx = r * 3 + c
+            cell_val = board[idx]
+            label = f"{idx} {cell_val}" if cell_val != " " else str(idx)
+            disabled = game_over or cell_val != " " or adversarial.winner(board) is not None
+            btn_key = f"ttt_{idx}"
+            if cols[c].button(label, key=btn_key, disabled=disabled, use_container_width=True):
+                # Human plays O
+                new_board = adversarial.play(board, idx, "O")
+                st.session_state.ttt_board = new_board
+                # AI replies with Alpha-Beta if game not over
+                ai_move, ai_board = adversarial.choose_move_alpha_beta(new_board, ai_player="X")
+                if ai_board is not None:
+                    st.session_state.ttt_board = ai_board
+                st.rerun()
+
+    # Show game status
+    if win:
+        st.success(f"¡Ganador: {win}!")
+    elif full:
+        st.info("¡Empate!")
+    else:
+        moves_left = len(adversarial.available_moves(board))
+        st.write(f"Turno: {'O (Humano)' if moves_left % 2 == 1 else 'X (Máquina)'} — {moves_left} movimiento(s) disponible(s)")
+
+    st.caption("Humano = O, Máquina = X (Alpha-Beta). La máquina responde automáticamente después de cada jugada humana.")
+
+    if st.button("Reiniciar partida", key="ttt_reset"):
+        st.session_state.ttt_board = (" ", " ", " ", " ", " ", " ", " ", " ", " ")
+        st.session_state.ttt_game_over = False
+        st.rerun()
 
 
 st.title("Visualizador de algoritmos de búsqueda")

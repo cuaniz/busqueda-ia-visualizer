@@ -33,10 +33,11 @@ class FrozenLake:
         return state == self.goal
 
     def successors(self, state: Position) -> list[tuple[str, Position, float]]:
+        # Antihorario order: Up, Left, Down, Right.
         moves = [
             ("Arriba", (-1, 0)),
-            ("Abajo", (1, 0)),
             ("Izquierda", (0, -1)),
+            ("Abajo", (1, 0)),
             ("Derecha", (0, 1)),
         ]
         result = []

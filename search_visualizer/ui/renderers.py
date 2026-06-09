@@ -11,6 +11,16 @@ from search_visualizer.problems.sokoban import Sokoban, SokobanState
 ICON_SIZE = 28
 
 
+def cell_id(row: int, col: int, width: int) -> int:
+    """Row-major numeric cell label: row * width + column."""
+    return row * width + col
+
+
+def position_id(pos: tuple[int, int], width: int) -> int:
+    """Convert a (row, col) position tuple to a numeric cell id."""
+    return pos[0] * width + pos[1]
+
+
 def _svg(body: str, view_box: str = "0 0 32 32") -> str:
     return f"<svg width='{ICON_SIZE}' height='{ICON_SIZE}' viewBox='{view_box}' aria-hidden='true' style='display:block;margin:auto'>{body}</svg>"
 
@@ -29,12 +39,19 @@ PLAYER_ICON = _svg("<circle cx='16' cy='10' r='5' fill='#f97316'/><path d='M8 27
 QUEEN_ICON = _svg("<path d='M7 24h18l-2-12-5 5-2-8-2 8-5-5-2 12z' fill='#7c2d12'/><rect x='8' y='24' width='16' height='3' rx='1.5' fill='#7c2d12'/>")
 
 
-def _cell(content: str, background: str = "#f8fafc", color: str = "#111827") -> str:
+def _cell(content: str, background: str = "#f8fafc", color: str = "#111827", cell_id: int | None = None) -> str:
+    badge = ""
+    if cell_id is not None:
+        badge = (
+            "<span style='position:absolute;top:1px;left:2px;font-size:9px;"
+            f"font-weight:600;color:#64748b;line-height:1;pointer-events:none'>"
+            f"{cell_id}</span>"
+        )
     return (
-        "<td style='width:52px;height:52px;text-align:center;vertical-align:middle;"
+        "<td style='position:relative;width:52px;height:52px;text-align:center;vertical-align:middle;"
         f"font-size:18px;font-weight:700;background:{background};color:{color};"
         "border:1px solid #cbd5e1;border-radius:8px'>"
-        f"{content}</td>"
+        f"{badge}{content}</td>"
     )
 
 
@@ -74,7 +91,7 @@ def render_frozen_lake(
             if current == pos:
                 content = CURRENT_ICON
                 background = "#ffedd5"
-            cells.append(_cell(content, background, color))
+            cells.append(_cell(content, background, color, cell_id=r * problem.width + c))
         rows.append("".join(cells))
     return _table(rows)
 
@@ -115,20 +132,25 @@ def render_sokoban(
             if pos == player:
                 content = PLAYER_ICON
                 background = "#ffedd5"
-            cells.append(_cell(content, background, "#111827"))
+            cells.append(_cell(content, background, "#111827", cell_id=r * problem.width + c))
         rows.append("".join(cells))
     stats = f"<p><strong>Visitados:</strong> {visited_count} | <strong>Frontera:</strong> {frontier_count}</p>"
     return _table(rows) + stats
 
 
 def render_queens(board: tuple[int, ...]) -> str:
+    n = len(board)
     rows = []
-    for r in range(len(board)):
-        cells = []
-        for c in range(len(board)):
+    for r in range(n):
+        label_cell = (
+            "<td style='width:24px;height:52px;text-align:center;vertical-align:middle;"
+            f"font-size:13px;font-weight:700;color:#475569;border:none'>{r + 1}</td>"
+        )
+        cells = [label_cell]
+        for c in range(n):
             has_queen = board[r] == c
             background = "#f8fafc" if (r + c) % 2 == 0 else "#cbd5e1"
-            cells.append(_cell(QUEEN_ICON if has_queen else "", background, "#7c2d12"))
+            cells.append(_cell(QUEEN_ICON if has_queen else "", background, "#7c2d12", cell_id=r * n + c))
         rows.append("".join(cells))
     return _table(rows)
 
@@ -142,6 +164,6 @@ def render_tictactoe(board: tuple[str, ...]) -> str:
             content = escape(value) if value != " " else "&nbsp;"
             background = "#dbeafe" if value == "X" else "#fee2e2" if value == "O" else "#f8fafc"
             color = "#1e3a8a" if value == "X" else "#991b1b" if value == "O" else "#111827"
-            cells.append(_cell(content, background, color))
+            cells.append(_cell(content, background, color, cell_id=r * 3 + c))
         rows.append("".join(cells))
     return _table(rows)

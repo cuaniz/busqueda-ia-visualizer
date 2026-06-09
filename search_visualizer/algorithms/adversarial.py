@@ -53,23 +53,6 @@ def opponent(player: str) -> str:
     return "O" if player == "X" else "X"
 
 
-def minimax_value(board: Board, current_player: str, ai_player: str) -> tuple[int, int]:
-    win = winner(board)
-    if win is not None or is_full(board):
-        return utility(board, ai_player), 1
-
-    nodes = 1
-    values = []
-    for move in available_moves(board):
-        value, child_nodes = minimax_value(play(board, move, current_player), opponent(current_player), ai_player)
-        nodes += child_nodes
-        values.append(value)
-
-    if current_player == ai_player:
-        return max(values), nodes
-    return min(values), nodes
-
-
 def alpha_beta_value(board: Board, current_player: str, ai_player: str, alpha: int = -10, beta: int = 10) -> tuple[int, int]:
     win = winner(board)
     if win is not None or is_full(board):
@@ -98,19 +81,18 @@ def alpha_beta_value(board: Board, current_player: str, ai_player: str, alpha: i
     return value, nodes
 
 
-def choose_move(board: Board, ai_player: str = "X", algorithm: str = "Minimax") -> tuple[int | None, list[MoveEvaluation], Board | None]:
+def choose_move_alpha_beta(board: Board, ai_player: str = "X") -> tuple[int | None, Board | None]:
+    """Select the best move for ai_player using Alpha-Beta pruning only."""
     moves = available_moves(board)
     if not moves or winner(board) is not None:
-        return None, [], None
+        return None, None
 
-    evaluations: list[MoveEvaluation] = []
+    best_move: int | None = None
+    best_value: int = -10
     for move in moves:
         next_board = play(board, move, ai_player)
-        if algorithm == "Alpha-Beta Pruning":
-            value, nodes = alpha_beta_value(next_board, opponent(ai_player), ai_player)
-        else:
-            value, nodes = minimax_value(next_board, opponent(ai_player), ai_player)
-        evaluations.append(MoveEvaluation(move, value, nodes))
-
-    best = max(evaluations, key=lambda item: item.value)
-    return best.move, evaluations, play(board, best.move, ai_player)
+        value, _nodes = alpha_beta_value(next_board, opponent(ai_player), ai_player)
+        if value > best_value:
+            best_value = value
+            best_move = move
+    return best_move, play(board, best_move, ai_player) if best_move is not None else None
