@@ -2,6 +2,8 @@
 
 Aplicación interactiva en Python + Streamlit para visualizar y comparar algoritmos de búsqueda aplicados a cuatro problemas clásicos.
 
+**Identidad visual:** Laboratorio Académico de Búsqueda — paleta sobria con petrol blue (#1F4E5F), verde académico (#3A7D44), mostaza suave (#C69C3D) y fondo papel cálido (#F7F4EC).
+
 | Tipo de búsqueda | Problema | Algoritmos incluidos |
 |---|---|---|
 | Búsqueda no informada | Frozen Lake determinista | BFS, DFS |
