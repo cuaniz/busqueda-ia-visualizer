@@ -1,4 +1,4 @@
-"""Frozen Lake deterministic grid problem."""
+
 
 from __future__ import annotations
 
@@ -27,13 +27,13 @@ class FrozenLake:
             for c, value in enumerate(row):
                 if value == target:
                     return (r, c)
-        raise ValueError(f"Missing {target}")
+        raise ValueError(f"No se encontró '{target}' en la cuadrícula")
 
     def is_goal(self, state: Position) -> bool:
         return state == self.goal
 
     def successors(self, state: Position) -> list[tuple[str, Position, float]]:
-        # Antihorario order: Up, Left, Down, Right.
+
         moves = [
             ("Arriba", (-1, 0)),
             ("Izquierda", (0, -1)),

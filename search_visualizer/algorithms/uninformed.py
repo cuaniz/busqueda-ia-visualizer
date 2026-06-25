@@ -1,4 +1,4 @@
-"""Uninformed search algorithms for graph-like problems."""
+
 
 from __future__ import annotations
 
@@ -20,7 +20,6 @@ def _make_metadata(
     state_to_id: StateToIdFn | None = None,
     comentario: str = "",
 ) -> dict[str, Any]:
-    """Build metadata dict with numeric ids when state_to_id is provided."""
     visited_list = list(visited)
     if state_to_id is not None:
         return {
@@ -41,7 +40,7 @@ def reconstruct_path(parent: dict[Any, tuple[Any, str] | None], goal: Any) -> li
     path = [goal]
     current = goal
     while parent[current] is not None:
-        current = parent[current][0]  # type: ignore[index]
+        current = parent[current][0] 
         path.append(current)
     path.reverse()
     return path
@@ -90,10 +89,7 @@ def depth_first_search(
     state_to_id: StateToIdFn | None = None,
     max_steps: int = 500,
 ) -> list[SearchStep]:
-    # DFS uses a stack (LIFO). The stack stores the frontier; when a branch
-    # is exhausted (no unvisited successors), the algorithm backtracks by
-    # popping the next candidate from the stack. This is NOT a shortest-path
-    # search — the path length grows and shrinks as DFS explores and retreats.
+
     frontier = [start]
     parent: dict[Any, tuple[Any, str] | None] = {start: None}
     visited: set[Any] = set()
@@ -104,11 +100,9 @@ def depth_first_search(
     while frontier and len(steps) < max_steps:
         current = frontier.pop()
         if current in visited:
-            # DFS backtrack: this node was already explored via another branch.
             continue
         visited.add(current)
         visited_order.append(current)
-        # Rebuild the path from parent pointers to reflect the current stack depth.
         current_path = reconstruct_path(parent, current)
 
         if is_goal(current):
@@ -124,8 +118,7 @@ def depth_first_search(
 
         comentario = ""
         if not generated:
-            # Dead end: no unvisited successors from this node.
-            # DFS will backtrack by popping the next node from the stack.
+
             comentario = "DFS no encontró sucesores no visitados; retrocede (backtrack) y prueba la siguiente rama de la pila."
 
         steps.append(SearchStep("Expandir nodo", "Se extrae el último estado de la pila y se continúa profundizando.", current, frontier.copy(), visited.copy(), current_path, metadata=_make_metadata(visited_order, frontier.copy(), current, len(current_path), state_to_id, comentario)))

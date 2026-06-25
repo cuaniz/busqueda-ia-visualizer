@@ -1,4 +1,4 @@
-"""HTML board renderers used by Streamlit."""
+
 
 from __future__ import annotations
 
@@ -12,12 +12,10 @@ ICON_SIZE = 28
 
 
 def cell_id(row: int, col: int, width: int) -> int:
-    """Row-major numeric cell label: row * width + column."""
     return row * width + col
 
 
 def position_id(pos: tuple[int, int], width: int) -> int:
-    """Convert a (row, col) position tuple to a numeric cell id."""
     return pos[0] * width + pos[1]
 
 

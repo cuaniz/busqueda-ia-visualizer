@@ -3,7 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Virtual environments
+# Entornos virtuales
 .venv/
 venv/
 env/
@@ -13,13 +13,13 @@ env/
 .streamlit_stderr.log
 .streamlit_stdout.log
 
-# Local caches
+# Cachés locales
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
 .atl/
 
-# OS / editors
+# Sistema operativo / editores
 .DS_Store
 Thumbs.db
 .vscode/

@@ -1,4 +1,4 @@
-"""Shared models for algorithm traces."""
+
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from typing import Any
 
 @dataclass
 class SearchStep:
-    """One visualizable step produced by a search algorithm."""
+
 
     title: str
     description: str

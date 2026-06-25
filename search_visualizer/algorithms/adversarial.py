@@ -1,4 +1,4 @@
-"""Adversarial search algorithms for Tic-Tac-Toe."""
+
 
 from __future__ import annotations
 
@@ -82,17 +82,19 @@ def alpha_beta_value(board: Board, current_player: str, ai_player: str, alpha: i
 
 
 def choose_move_alpha_beta(board: Board, ai_player: str = "X") -> tuple[int | None, Board | None]:
-    """Select the best move for ai_player using Alpha-Beta pruning only."""
+
     moves = available_moves(board)
     if not moves or winner(board) is not None:
         return None, None
 
     best_move: int | None = None
     best_value: int = -10
+    alpha: int = -10
     for move in moves:
         next_board = play(board, move, ai_player)
-        value, _nodes = alpha_beta_value(next_board, opponent(ai_player), ai_player)
+        value, _nodes = alpha_beta_value(next_board, opponent(ai_player), ai_player, alpha, 10)
         if value > best_value:
             best_value = value
             best_move = move
+        alpha = max(alpha, best_value)
     return best_move, play(board, best_move, ai_player) if best_move is not None else None

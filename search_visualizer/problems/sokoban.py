@@ -1,4 +1,4 @@
-"""Small Sokoban problem for informed search."""
+
 
 from __future__ import annotations
 
@@ -35,13 +35,13 @@ class Sokoban:
                 elif value == "P":
                     player = (r, c)
         if len(boxes) != 2:
-            raise ValueError(f"Sokoban requires exactly 2 boxes, found {len(boxes)}")
+            raise ValueError(f"Sokoban requiere exactamente 2 cajas, se encontraron {len(boxes)}")
         if len(goals) != 2:
-            raise ValueError(f"Sokoban requires exactly 2 goals, found {len(goals)}")
+            raise ValueError(f"Sokoban requiere exactamente 2 objetivos, se encontraron {len(goals)}")
         if len(goals) != len(set(goals)):
-            raise ValueError("Sokoban goals must be at distinct positions")
+            raise ValueError("Los objetivos de Sokoban deben estar en posiciones distintas")
         if boxes == goals:
-            raise ValueError("Sokoban boxes must not start on goal positions")
+            raise ValueError("Las cajas de Sokoban no deben iniciar sobre los objetivos")
         object.__setattr__(self, "walls", frozenset(walls))
         object.__setattr__(self, "goals", frozenset(goals))
         object.__setattr__(self, "start", (player, frozenset(boxes)))

@@ -1,4 +1,4 @@
-"""Informed search algorithms for Sokoban and similar state spaces."""
+
 
 from __future__ import annotations
 

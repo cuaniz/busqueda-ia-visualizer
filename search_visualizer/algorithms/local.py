@@ -1,4 +1,4 @@
-"""Local search algorithms for the 8 queens problem."""
+
 
 from __future__ import annotations
 
